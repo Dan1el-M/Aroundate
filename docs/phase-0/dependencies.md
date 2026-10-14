@@ -1,0 +1,26 @@
+# Proposed dependency register
+
+No runtime packages have been installed. Entries are candidate dependencies, not a verified lockfile/SBOM. Version, support lifecycle, release activity, advisories, exact license and transitive licenses must be checked against the selected release in Phase 1, then pinned with a lockfile and immutable container digest. Avoid unnecessary dependencies and native images when standard platform APIs suffice.
+
+| Candidate | Purpose / justification | License review starting point and security/maintenance gate |
+| --- | --- | --- |
+| Node.js supported LTS, TypeScript | One application language, strict compile-time contracts | MIT/Apache-2.0 respective core licenses; Node includes third-party notices. Select supported release and advisory-free patch; strict/noUncheckedIndexedAccess/exactOptionalPropertyTypes. |
+| React, Next.js | Accessible component UI, bilingual responsive rendering/BFF | MIT projects; review framework security notices, patched supported release, server/client boundary tests. [Official Next docs](https://nextjs.org/docs). |
+| NestJS | Modular DI HTTP presentation, middleware and workers | MIT project; supported release, minimal enabled modules, validation/auth adapters reviewed. [Official docs](https://docs.nestjs.com/). |
+| PostgreSQL, PostGIS | ACID normalized store and licensed-catalog geography | PostgreSQL License; PostGIS GPL-family license and extension/packaging obligations verify selected release. No engine copied into application code; managed hosting contract review. |
+| Redis and official Node Redis client | Distributed quotas/approved cache/queue infrastructure | Redis 8+ offers RSALv2/SSPLv1/AGPLv3 alternatives, not an assumed BSD license. Select suitable legal/commercial arrangement with counsel; client release license separately. [Official license page](https://redis.io/legal/licenses/). |
+| pg (node-postgres) | Parameterized SQL, pooling and transactions, PostGIS control | MIT candidate; pool context isolation/RLS tests, supported version and migration tooling license review. |
+| Zod or equivalent JSON-schema validator | Strict runtime client/provider mapping | MIT candidate if Zod chosen; choose one source-of-truth schema path and measure bundle cost. Server requests reject unknown properties; provider mappings intentionally strip unknown fields. |
+| jose and standards OIDC client | JWT/JWK validation and OIDC flow rather than bespoke crypto | MIT candidates; validate issuer/alg/key types/rotation, pick maintained OIDC client and review its exact license. Use Web Crypto/node crypto for HMAC/randomness. |
+| Keycloak-compatible IdP | Email/OIDC registration/reset, passkeys, TOTP and password policy | Keycloak Apache-2.0 project; support/operations contract or trained operator; validate password hash/blocklist features and extension security. [Project](https://github.com/keycloak/keycloak). No claim all requirements work by default. |
+| uuid or reviewed UUIDv7 implementation | Standards-based public IDs | MIT candidate; chosen release must expose tested UUIDv7; timestamp leakage documented. |
+| Sharp + underlying imaging stack, ClamAV | Decode/re-encode/metadata stripping and malware scanning | Sharp Apache-2.0 candidate, transitive libvips LGPL and ClamAV GPL obligations require packaging review. Native CVEs/signature freshness/scan fail-closed tests. |
+| Pino, OpenTelemetry | Allowlisted structured logs and traces | MIT/Apache-2.0 candidates; redaction tests, minimum exporters, no default request-body instrumentation. |
+| Official S3-compatible SDK | Private quarantined media/export storage | Chosen SDK/license depends on cloud (AWS SDK Apache-2.0 candidate); restricted bucket policies/signed URL validation; no whole-cloud admin credential. |
+| next-intl or small equivalent | Spanish/English strings and locale formatting | MIT candidate; only adopt if native Intl + message abstraction is insufficient; verify release maintenance and plural/date behavior. |
+| Vitest, fast-check, Playwright, axe-core | Unit/properties/E2E/automated accessibility | MIT/MIT/Apache-2.0/MPL-2.0 candidate licenses; exact version and browser binaries reviewed, CI dependency isolation. |
+| k6, Lighthouse CI, ZAP, scanners | Load, performance and security verification | k6 AGPL-3.0, Lighthouse family Apache-2.0, ZAP Apache-2.0 candidate licenses; scanner rules/plugins/transitives review; test-only tools isolated from runtime. |
+| pnpm, ESLint, Prettier | Locked install, static checks and formatting | MIT candidates; reviewed plugins/config, no arbitrary unreviewed install scripts; lockfile integrity and frozen install. |
+| OpenTofu/Terraform-compatible IaC | Repeatable separate environments | Prefer OpenTofu candidate MPL-2.0 or explicitly approved Terraform licensing; chosen cloud providers/modules require separate license/security review. [Official intro](https://opentofu.org/docs/intro/). |
+
+Provider SDKs are optional: official HTTPS fetch with reviewed schemas may reduce dependency footprint. No scraping libraries or unofficial social wrappers. Docker/base images, Google/Meta/TikTok API terms and maps SDK terms are separate license/vendor inventory items, not automatically covered by npm licenses. No unverified “all dependencies maintained/secure” assertion.

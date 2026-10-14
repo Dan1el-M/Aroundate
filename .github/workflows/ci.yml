@@ -1,0 +1,123 @@
+name: Aroundate checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run format:check
+      - run: npm run check
+      - run: npm audit --audit-level=high
+      - run: npm run build
+      - run: npm run sbom
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: quality-evidence
+          path: |
+            coverage/
+            sbom.cdx.json
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: docker.io/postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6
+        env:
+          POSTGRES_DB: aroundate
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aroundate"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      # Trust authentication only inside this ephemeral synthetic-data CI VM.
+      MIGRATION_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/aroundate
+      DATABASE_URL: postgresql://aroundate_app@127.0.0.1:5432/aroundate
+      NODE_ENV: test
+      RUN_DB_TESTS: "true"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run db:migrate
+      - run: npm run db:prepare-ci
+      - run: npm run db:seed
+      - run: npm test
+      - run: npm run db:rollback
+      - run: npm run db:rollback
+      - run: npm run db:migrate
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx --no-install playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: browser-evidence
+          path: |
+            test-results/
+            playwright-report/
+  static-security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: github/codeql-action/init@9f759ee644a3e7c15c1390abf49868036c00067b
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+      - uses: github/codeql-action/analyze@9f759ee644a3e7c15c1390abf49868036c00067b
+        with:
+          output: sarif-results
+      - run: node scripts/sarif-gate.mjs sarif-results
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build API and web with pinned runtime
+        run: |
+          NODE_IMAGE=$(node -p "JSON.parse(require('fs').readFileSync('infra/images.lock.json')).node.image")
+          docker build -f infra/Dockerfile --target api --build-arg "NODE_IMAGE=$NODE_IMAGE" -t aroundate-api:test .
+          docker build -f infra/Dockerfile --target web --build-arg "NODE_IMAGE=$NODE_IMAGE" -t aroundate-web:test .
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: aroundate-api:test
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: aroundate-web:test
+          severity: HIGH,CRITICAL
+          exit-code: "1"

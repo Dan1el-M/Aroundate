@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.next-production/
+dist/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
+tmp/
+*.log
+*.tsbuildinfo
+.DS_Store
+.runtime/

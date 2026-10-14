@@ -1,0 +1,11 @@
+node_modules
+**/.next*
+dist
+tmp
+.git
+.env
+.env.*
+coverage
+test-results
+playwright-report
+.runtime

@@ -1,0 +1,6142 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Aroundate API — Phase 0 draft",
+    "version": "0.1.0-sandbox",
+    "description": "Implemented sandbox API only. Live startup blocked. Planned full contract remains in docs/phase-0/openapi.json. Additional semantic validation is implemented with Zod."
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3001",
+      "description": "Local sandbox; no live providers or production service."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Discovery"
+    },
+    {
+      "name": "Privacy"
+    },
+    {
+      "name": "Policies"
+    },
+    {
+      "name": "Trust"
+    },
+    {
+      "name": "Account"
+    },
+    {
+      "name": "Providers"
+    },
+    {
+      "name": "Administration"
+    }
+  ],
+  "paths": {
+    "/v1/searches": {
+      "post": {
+        "operationId": "searchPlaces",
+        "summary": "Evaluate transient discovery and rank candidates",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/taxonomies": {
+      "get": {
+        "operationId": "getTaxonomies",
+        "summary": "Read database-managed category tree and filters",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "es-CR",
+                "en"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Taxonomies"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified; no body.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified."
+      }
+    },
+    "/v1/providers/status": {
+      "get": {
+        "operationId": "getProviderStatus",
+        "summary": "Read coarse provider health without billed probes",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderStatuses"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified."
+      }
+    },
+    "/v1/places/{place_id}": {
+      "get": {
+        "operationId": "getPlace",
+        "summary": "Read place details with source evidence",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Mixed provider facts no-store. Native-only responses may use conditional ETag according to policy.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "es-CR",
+                "en"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified."
+      }
+    },
+    "/v1/autocomplete": {
+      "post": {
+        "operationId": "autocomplete",
+        "summary": "Suggest places cuisines and cities",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutocompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutocompleteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/geocoding": {
+      "post": {
+        "operationId": "geocode",
+        "summary": "Resolve a manually entered address",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeocodingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeocodingRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/consents": {
+      "get": {
+        "operationId": "getConsents",
+        "summary": "Read this subject purpose choices",
+        "tags": [
+          "Privacy"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentState"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          },
+          {}
+        ],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified."
+      },
+      "post": {
+        "operationId": "recordConsent",
+        "summary": "Record versioned purpose-specific grant rejection or withdrawal",
+        "tags": [
+          "Privacy"
+        ],
+        "description": "Signed anonymous purpose-session or account; CSRF+Origin, GPC/DNT policy, proof/version checks. No client owner ID.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentState"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          },
+          {}
+        ],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentEventRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Read own minimal profile",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "profile:read"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope profile:read; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      },
+      "patch": {
+        "operationId": "updateProfile",
+        "summary": "Update allowlisted own profile fields",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "profile:write"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope profile:write; cookie BFF must enforce identical scope. Owner checks or privileged role on every object.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePatch"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/saved-places": {
+      "get": {
+        "operationId": "listSavedPlaces",
+        "summary": "List own saved places",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPlaces"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "saved:read"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope saved:read; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      }
+    },
+    "/v1/me/saved-places/{place_id}": {
+      "put": {
+        "operationId": "savePlace",
+        "summary": "Save own place idempotently",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPlace"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "saved:write"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope saved:write; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      },
+      "delete": {
+        "operationId": "unsavePlace",
+        "summary": "Remove own saved place",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Completed, no response body.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "saved:write"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope saved:write; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      }
+    },
+    "/v1/me/presets": {
+      "get": {
+        "operationId": "listPresets",
+        "summary": "List own filter presets",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Presets"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "presets:read"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope presets:read; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      },
+      "post": {
+        "operationId": "createPreset",
+        "summary": "Save own filters with explicit optional location grant",
+        "tags": [
+          "Account"
+        ],
+        "description": "save_location=false strips coordinate/address center from durable preset; must use city reference. true requires current location_consent_event_id; no search cursor persisted.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Resource created.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "Location": {
+                "description": "URI of created resource.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri",
+                  "maxLength": 2048
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preset"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "presets:write"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope presets:write; cookie BFF must enforce identical scope. Owner checks or privileged role on every object.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresetInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/presets/{preset_id}": {
+      "get": {
+        "operationId": "getPreset",
+        "summary": "Read own filter preset",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "preset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preset"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "presets:read"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope presets:read; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      },
+      "delete": {
+        "operationId": "deletePreset",
+        "summary": "Delete own preset",
+        "tags": [
+          "Account"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "preset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Completed, no response body.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "presets:write"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope presets:write; cookie BFF must enforce identical scope. Owner checks or privileged role on every object."
+      }
+    },
+    "/v1/reports": {
+      "post": {
+        "operationId": "reportContent",
+        "summary": "Submit abuse copyright or inaccurate-data notice",
+        "tags": [
+          "Trust"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted asynchronous work.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/contact": {
+      "post": {
+        "operationId": "submitContact",
+        "summary": "Submit minimal support request without marketing opt-in",
+        "tags": [
+          "Policies"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted asynchronous work.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [],
+        "x-authorization": "Anonymous with quotas; signed purpose-session/state or provider signature where specified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/data-subject-requests": {
+      "post": {
+        "operationId": "createDSR",
+        "summary": "Create own verified rights workflow",
+        "tags": [
+          "Privacy"
+        ],
+        "description": "Phase 0 draft; see api-design.md for validation, privacy and authorization semantics.",
+        "parameters": [
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted asynchronous work.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Opaque request correlation UUID.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-store for private/search/live-provider data; native public taxonomy can use max-age=60.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "ETag": {
+                "description": "Native public conditional read or private optimistic concurrency only.",
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DSR"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem409"
+          },
+          "412": {
+            "$ref": "#/components/responses/Problem412"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem413"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Problem428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem503"
+          }
+        },
+        "security": [
+          {
+            "oidc": [
+              "rights:write"
+            ]
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "x-authorization": "Required scope rights:write; cookie BFF must enforce identical scope. Owner checks or privileged role on every object.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DSRInput"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                }
+              },
+              "required": [
+                "field",
+                "code",
+                "message"
+              ]
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "correlation_id"
+        ]
+      },
+      "Coordinates": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "geolocation"
+            ]
+          },
+          "accuracy_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "source"
+        ]
+      },
+      "GeoPoint": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "Center": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "coordinates",
+                "type": "string"
+              },
+              "coordinates": {
+                "$ref": "#/components/schemas/Coordinates"
+              }
+            },
+            "required": [
+              "kind",
+              "coordinates"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "address",
+                "type": "string"
+              },
+              "address": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "country": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              }
+            },
+            "required": [
+              "kind",
+              "address",
+              "country"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "city",
+                "type": "string"
+              },
+              "city_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            },
+            "required": [
+              "kind",
+              "city_id"
+            ]
+          }
+        ]
+      },
+      "PriceFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "CRC",
+              "USD"
+            ]
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "maxItems": 5,
+            "uniqueItems": true
+          },
+          "min_amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$",
+            "description": "Nonnegative decimal money amount; no binary floating point."
+          },
+          "max_amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$",
+            "description": "Nonnegative decimal money amount; no binary floating point."
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "per_person",
+              "activity"
+            ]
+          }
+        },
+        "required": [
+          "currency"
+        ]
+      },
+      "Filters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "cuisines": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "price": {
+            "$ref": "#/components/schemas/PriceFilter"
+          },
+          "radius_km": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 50,
+            "default": 5
+          },
+          "min_rating": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "rating_source": {
+            "type": "string",
+            "enum": [
+              "google",
+              "aroundate"
+            ],
+            "default": "google"
+          },
+          "open_now": {
+            "type": "boolean"
+          },
+          "accessibility": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "dietary": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUIDv7 public identifier; never an authorization secret."
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          }
+        },
+        "required": []
+      },
+      "SearchRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "q": {
+            "default": "",
+            "type": "string",
+            "maxLength": 200
+          },
+          "locale": {
+            "default": "es-CR",
+            "type": "string",
+            "enum": [
+              "es-CR",
+              "en"
+            ]
+          },
+          "center": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "city"
+                  },
+                  "city_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "kind",
+                  "city_id"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "coordinates"
+                  },
+                  "coordinates": {
+                    "type": "object",
+                    "properties": {
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "manual",
+                          "geolocation"
+                        ]
+                      },
+                      "accuracy_m": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000
+                      }
+                    },
+                    "required": [
+                      "latitude",
+                      "longitude",
+                      "source"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "kind",
+                  "coordinates"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "address"
+                  },
+                  "address": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "country": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{2}$"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "address",
+                  "country"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "filters": {
+            "default": {
+              "categories": [],
+              "cuisines": [],
+              "radius_km": 5,
+              "rating_source": "google",
+              "open_now": false,
+              "accessibility": [],
+              "dietary": [],
+              "tags": []
+            },
+            "type": "object",
+            "properties": {
+              "categories": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              },
+              "cuisines": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              },
+              "price": {
+                "type": "object",
+                "properties": {
+                  "currency": {
+                    "type": "string",
+                    "enum": [
+                      "CRC",
+                      "USD"
+                    ]
+                  },
+                  "levels": {
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4
+                    }
+                  },
+                  "min_amount": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$"
+                  },
+                  "max_amount": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$"
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "per_person",
+                      "activity"
+                    ]
+                  }
+                },
+                "required": [
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "radius_km": {
+                "default": 5,
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 50
+              },
+              "min_rating": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+              },
+              "rating_source": {
+                "default": "google",
+                "type": "string",
+                "enum": [
+                  "google",
+                  "aroundate"
+                ]
+              },
+              "open_now": {
+                "default": false,
+                "type": "boolean"
+              },
+              "accessibility": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              },
+              "dietary": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              },
+              "tags": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              }
+            },
+            "required": [
+              "categories",
+              "cuisines",
+              "radius_km",
+              "rating_source",
+              "open_now",
+              "accessibility",
+              "dietary",
+              "tags"
+            ],
+            "additionalProperties": false
+          },
+          "priority": {
+            "default": [
+              "price",
+              "distance",
+              "type_match",
+              "rating",
+              "popularity"
+            ],
+            "minItems": 1,
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "price",
+                "distance",
+                "type_match",
+                "rating",
+                "popularity"
+              ]
+            }
+          },
+          "strategy": {
+            "default": "lexicographic",
+            "type": "string",
+            "enum": [
+              "lexicographic",
+              "weighted"
+            ]
+          },
+          "page_size": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "required": [
+          "q",
+          "locale",
+          "center",
+          "filters",
+          "priority",
+          "strategy",
+          "page_size"
+        ],
+        "additionalProperties": false
+      },
+      "Provenance": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "google",
+              "instagram",
+              "tiktok",
+              "aroundate"
+            ]
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author_display_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "description": "RFC 3339 UTC timestamp."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "attribution_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "license_policy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "evidence_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "source_url",
+          "author_display_name",
+          "published_at",
+          "observed_at",
+          "license_policy"
+        ]
+      },
+      "Warning": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "google",
+                  "instagram",
+                  "tiktok"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "CriterionFact": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "enum": [
+              "price",
+              "distance",
+              "rating",
+              "type_match",
+              "popularity"
+            ]
+          },
+          "known": {
+            "type": "boolean"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "utility_micros": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "raw_weight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "weighted_numerator": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000000
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Provenance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "criterion",
+          "known",
+          "value",
+          "utility_micros",
+          "raw_weight",
+          "weighted_numerator",
+          "provenance"
+        ]
+      },
+      "RankExplanation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ordinal": {
+            "type": "number"
+          },
+          "strategy": {
+            "type": "string"
+          },
+          "algorithm_version": {
+            "type": "string"
+          },
+          "full_priority": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "weighted_numerator": {
+            "type": "number"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankFact"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ]
+            }
+          }
+        },
+        "required": [
+          "ordinal",
+          "strategy",
+          "algorithm_version",
+          "full_priority",
+          "weighted_numerator",
+          "facts",
+          "warnings"
+        ]
+      },
+      "Rating": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "google",
+              "aroundate"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "required": [
+          "source",
+          "value",
+          "count",
+          "formula",
+          "provenance"
+        ]
+      },
+      "Price": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$",
+                "description": "Nonnegative decimal money amount; no binary floating point."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CRC",
+                  "USD"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "per_person",
+                  "menu_item",
+                  "activity"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fx_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "description": "RFC 3339 UTC timestamp."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "required": [
+          "level",
+          "amount",
+          "currency",
+          "basis",
+          "fx_at",
+          "provenance"
+        ]
+      },
+      "PlaceSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cuisines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dietary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accessibility": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priceLevel": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prices": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "CRC": {
+                "type": "number"
+              },
+              "USD": {
+                "type": "number"
+              }
+            },
+            "required": []
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviews": {
+            "type": "number"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "start": {
+                    "type": "number"
+                  },
+                  "end": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "es": {
+                "type": "string"
+              },
+              "en": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "es",
+              "en"
+            ]
+          },
+          "tone": {
+            "type": "string"
+          },
+          "distance_km": {
+            "type": "number"
+          },
+          "open_now": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rating_source": {
+            "type": "string"
+          },
+          "demo": {
+            "type": "boolean"
+          },
+          "rank": {
+            "$ref": "#/components/schemas/RankExplanation"
+          },
+          "provenance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Provenance"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "latitude",
+          "longitude",
+          "categories",
+          "cuisines",
+          "dietary",
+          "accessibility",
+          "tags",
+          "priceLevel",
+          "prices",
+          "rating",
+          "reviews",
+          "hours",
+          "description",
+          "tone",
+          "distance_km",
+          "open_now",
+          "rating_source",
+          "demo",
+          "rank",
+          "provenance"
+        ]
+      },
+      "SearchResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceSummary"
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "candidate_scope": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "evaluated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Warning"
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "candidate_count",
+          "candidate_scope",
+          "truncated",
+          "evaluated_at",
+          "warnings"
+        ]
+      },
+      "Opinion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "original_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "translated": {
+            "type": "boolean"
+          },
+          "verified_account": {
+            "type": "boolean"
+          },
+          "verified_visit": {
+            "type": "boolean"
+          },
+          "incentive_disclosure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "original_text",
+          "translated",
+          "verified_account",
+          "verified_visit",
+          "incentive_disclosure",
+          "provenance"
+        ]
+      },
+      "Media": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "official_embed"
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "alt_text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "caption_or_transcript": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 40000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 40000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url",
+          "alt_text",
+          "caption_or_transcript",
+          "width",
+          "height",
+          "provenance"
+        ]
+      },
+      "PlaceDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cuisines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dietary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accessibility": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priceLevel": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prices": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "CRC": {
+                "type": "number"
+              },
+              "USD": {
+                "type": "number"
+              }
+            },
+            "required": []
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviews": {
+            "type": "number"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "start": {
+                    "type": "number"
+                  },
+                  "end": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "es": {
+                "type": "string"
+              },
+              "en": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "es",
+              "en"
+            ]
+          },
+          "tone": {
+            "type": "string"
+          },
+          "open_now": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "provenance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Provenance"
+            }
+          },
+          "opinions": {
+            "type": "array",
+            "items": {}
+          },
+          "media": {
+            "type": "array",
+            "items": {}
+          },
+          "demo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "latitude",
+          "longitude",
+          "categories",
+          "cuisines",
+          "dietary",
+          "accessibility",
+          "tags",
+          "priceLevel",
+          "prices",
+          "rating",
+          "reviews",
+          "hours",
+          "description",
+          "tone",
+          "open_now",
+          "source_links",
+          "provenance",
+          "opinions",
+          "media",
+          "demo"
+        ]
+      },
+      "AutocompleteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "q": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "es-CR",
+              "en"
+            ]
+          },
+          "center": {
+            "$ref": "#/components/schemas/Center"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 5
+          }
+        },
+        "required": [
+          "q"
+        ]
+      },
+      "AutocompleteResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "place",
+                    "cuisine",
+                    "city",
+                    "address"
+                  ]
+                },
+                "reference": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "google",
+                    "instagram",
+                    "tiktok",
+                    "aroundate"
+                  ]
+                }
+              },
+              "required": [
+                "label",
+                "kind",
+                "reference",
+                "source"
+              ]
+            },
+            "maxItems": 10,
+            "uniqueItems": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Warning"
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "items",
+          "warnings"
+        ]
+      },
+      "GeocodingRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "es-CR",
+              "en"
+            ]
+          }
+        },
+        "required": [
+          "address",
+          "country"
+        ]
+      },
+      "GeocodingResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "coordinates": {
+                  "$ref": "#/components/schemas/GeoPoint"
+                },
+                "provenance": {
+                  "$ref": "#/components/schemas/Provenance"
+                }
+              },
+              "required": [
+                "label",
+                "coordinates",
+                "provenance"
+              ]
+            },
+            "maxItems": 10,
+            "uniqueItems": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Warning"
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "items",
+          "warnings"
+        ]
+      },
+      "TaxonomyEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "es": {
+            "type": "string"
+          },
+          "en": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "parent_id",
+          "slug",
+          "es",
+          "en"
+        ]
+      },
+      "Taxonomies": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyEntry"
+            },
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "cuisines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyEntry"
+            },
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyEntry"
+            },
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyEntry"
+            },
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "default_radius_km": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 50
+          },
+          "max_radius_km": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 50
+          },
+          "currencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CRC",
+                "USD"
+              ]
+            },
+            "maxItems": 2,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "categories",
+          "cuisines",
+          "features",
+          "tags",
+          "default_radius_km",
+          "max_radius_km",
+          "currencies"
+        ]
+      },
+      "ProviderStatuses": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "enum": [
+                    "google",
+                    "instagram",
+                    "tiktok"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "available",
+                    "empty",
+                    "degraded",
+                    "disabled",
+                    "rate_limited"
+                  ]
+                },
+                "checked_at": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "RFC 3339 UTC timestamp."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "provider",
+                "state",
+                "checked_at"
+              ]
+            },
+            "maxItems": 3,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "providers"
+        ]
+      },
+      "ConsentPurpose": {
+        "type": "string",
+        "enum": [
+          "analytics",
+          "marketing_email",
+          "google_maps",
+          "instagram_embeds",
+          "tiktok_embeds",
+          "saved_location"
+        ]
+      },
+      "ConsentEventRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "policy_version": {
+            "type": "string",
+            "const": "2026-10-14"
+          },
+          "choices": {
+            "minItems": 1,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "purpose": {
+                  "type": "string",
+                  "enum": [
+                    "analytics",
+                    "marketing_email",
+                    "google_maps",
+                    "instagram_embeds",
+                    "tiktok_embeds",
+                    "saved_location"
+                  ]
+                },
+                "decision": {
+                  "type": "string",
+                  "enum": [
+                    "grant",
+                    "reject",
+                    "withdraw"
+                  ]
+                }
+              },
+              "required": [
+                "purpose",
+                "decision"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "policy_version",
+          "choices"
+        ],
+        "additionalProperties": false
+      },
+      "ConsentState": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "policy_version": {
+            "type": "string"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "purpose": {
+                  "type": "string"
+                },
+                "allowed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "purpose",
+                "allowed"
+              ]
+            }
+          },
+          "gpc": {
+            "type": "boolean"
+          },
+          "dnt": {
+            "type": "boolean"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "has_choice": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "policy_version",
+          "choices",
+          "gpc",
+          "dnt",
+          "expires_at",
+          "has_choice"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locale": {
+            "type": "string"
+          },
+          "verified_account": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "number"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "locale",
+          "verified_account",
+          "created_at",
+          "version"
+        ]
+      },
+      "ProfilePatch": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "es-CR",
+              "en"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Page": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "next_cursor"
+        ]
+      },
+      "SavedPlace": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "saved_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "place_id",
+          "saved_at"
+        ]
+      },
+      "SavedPlaces": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedPlace"
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "PresetInput": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "search": {
+            "type": "object",
+            "properties": {
+              "q": {
+                "default": "",
+                "type": "string",
+                "maxLength": 200
+              },
+              "locale": {
+                "default": "es-CR",
+                "type": "string",
+                "enum": [
+                  "es-CR",
+                  "en"
+                ]
+              },
+              "center": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "city"
+                      },
+                      "city_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "city_id"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "coordinates"
+                      },
+                      "coordinates": {
+                        "type": "object",
+                        "properties": {
+                          "latitude": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                          },
+                          "longitude": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "manual",
+                              "geolocation"
+                            ]
+                          },
+                          "accuracy_m": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "latitude",
+                          "longitude",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "coordinates"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "address"
+                      },
+                      "address": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "country": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{2}$"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "address",
+                      "country"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "filters": {
+                "default": {
+                  "categories": [],
+                  "cuisines": [],
+                  "radius_km": 5,
+                  "rating_source": "google",
+                  "open_now": false,
+                  "accessibility": [],
+                  "dietary": [],
+                  "tags": []
+                },
+                "type": "object",
+                "properties": {
+                  "categories": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "cuisines": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "price": {
+                    "type": "object",
+                    "properties": {
+                      "currency": {
+                        "type": "string",
+                        "enum": [
+                          "CRC",
+                          "USD"
+                        ]
+                      },
+                      "levels": {
+                        "maxItems": 5,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 4
+                        }
+                      },
+                      "min_amount": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$"
+                      },
+                      "max_amount": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,13})(\\.[0-9]{1,4})?$"
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "per_person",
+                          "activity"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "radius_km": {
+                    "default": 5,
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 50
+                  },
+                  "min_rating": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5
+                  },
+                  "rating_source": {
+                    "default": "google",
+                    "type": "string",
+                    "enum": [
+                      "google",
+                      "aroundate"
+                    ]
+                  },
+                  "open_now": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "accessibility": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "dietary": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "tags": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  }
+                },
+                "required": [
+                  "categories",
+                  "cuisines",
+                  "radius_km",
+                  "rating_source",
+                  "open_now",
+                  "accessibility",
+                  "dietary",
+                  "tags"
+                ],
+                "additionalProperties": false
+              },
+              "priority": {
+                "default": [
+                  "price",
+                  "distance",
+                  "type_match",
+                  "rating",
+                  "popularity"
+                ],
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "price",
+                    "distance",
+                    "type_match",
+                    "rating",
+                    "popularity"
+                  ]
+                }
+              },
+              "strategy": {
+                "default": "lexicographic",
+                "type": "string",
+                "enum": [
+                  "lexicographic",
+                  "weighted"
+                ]
+              },
+              "page_size": {
+                "default": 20,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "cursor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              }
+            },
+            "required": [
+              "q",
+              "locale",
+              "center",
+              "filters",
+              "priority",
+              "strategy",
+              "page_size"
+            ],
+            "additionalProperties": false
+          },
+          "save_location": {
+            "type": "boolean"
+          },
+          "location_consent_event_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "name",
+          "search",
+          "save_location"
+        ],
+        "additionalProperties": false
+      },
+      "PresetPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "search": {
+            "$ref": "#/components/schemas/PresetSearch"
+          }
+        },
+        "required": [],
+        "minProperties": 1
+      },
+      "Preset": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "search": {
+            "$ref": "#/components/schemas/PresetSearch"
+          },
+          "saved_location": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "search",
+          "saved_location",
+          "created_at",
+          "updated_at",
+          "version"
+        ]
+      },
+      "Presets": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Preset"
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ReviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "rating": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          },
+          "incentive_disclosure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "terms_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "license_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "place_id",
+          "rating",
+          "text",
+          "incentive_disclosure",
+          "terms_version",
+          "license_version"
+        ]
+      },
+      "ReviewPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rating": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          },
+          "incentive_disclosure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "minProperties": 1
+      },
+      "ReviewReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "published",
+              "flagged",
+              "removed"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "created_at"
+        ]
+      },
+      "UploadIntent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ]
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "alt_text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "license_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "license_granted": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "place_id",
+          "content_type",
+          "size_bytes",
+          "alt_text",
+          "license_version",
+          "license_granted"
+        ]
+      },
+      "UploadTarget": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "upload_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "state": {
+            "type": "string",
+            "const": "quarantined"
+          }
+        },
+        "required": [
+          "media_id",
+          "upload_url",
+          "expires_at",
+          "state"
+        ]
+      },
+      "UploadFinalize": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checksum_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "checksum_sha256"
+        ]
+      },
+      "MediaReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "quarantined",
+              "scanning",
+              "rejected",
+              "published"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "created_at"
+        ]
+      },
+      "DSRInput": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "access",
+              "export",
+              "rectification",
+              "erasure",
+              "restriction",
+              "objection"
+            ]
+          },
+          "details": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "DSR": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "access",
+              "export",
+              "rectification",
+              "erasure",
+              "restriction",
+              "objection"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "verification_required",
+              "pending",
+              "processing",
+              "completed",
+              "rejected"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "deadline_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "description": "RFC 3339 UTC timestamp."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "processor_tasks_pending": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "created_at",
+          "deadline_at",
+          "processor_tasks_pending"
+        ]
+      },
+      "DSRs": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DSR"
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ExportLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "download_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "download_url",
+          "expires_at"
+        ]
+      },
+      "AsyncReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "status": {
+            "type": "string",
+            "const": "pending"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "created_at"
+        ]
+      },
+      "ReportInput": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "place",
+              "opinion",
+              "media",
+              "tag",
+              "other"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "copyright",
+              "abuse",
+              "inaccurate",
+              "suspicious_review",
+              "accessibility",
+              "other"
+            ]
+          },
+          "details": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "contact_email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          }
+        },
+        "required": [
+          "target_kind",
+          "target_id",
+          "reason",
+          "details"
+        ],
+        "additionalProperties": false
+      },
+      "ContactInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "support",
+              "privacy",
+              "accessibility",
+              "security",
+              "other"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "topic",
+          "message"
+        ]
+      },
+      "Policy": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slug": {
+            "type": "string",
+            "enum": [
+              "privacy",
+              "cookies",
+              "terms",
+              "refunds",
+              "accessibility",
+              "business-information",
+              "contact",
+              "takedown"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "es-CR",
+              "en"
+            ]
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "description": "RFC 3339 UTC timestamp."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "slug",
+          "version",
+          "locale",
+          "draft",
+          "content",
+          "published_at"
+        ]
+      },
+      "ConnectionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "return_path": {
+            "type": "string",
+            "pattern": "^/account(?:/[a-z-]+)?$",
+            "maxLength": 100
+          }
+        },
+        "required": []
+      },
+      "ConnectionStart": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "authorize_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "authorize_url",
+          "expires_at"
+        ]
+      },
+      "ConnectionReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "instagram",
+              "tiktok"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "disconnected"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "provider",
+          "status",
+          "created_at"
+        ]
+      },
+      "ModerationFlag": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "opinion",
+              "media",
+              "tag"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "reviewing",
+              "resolved"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "id",
+          "target_kind",
+          "target_id",
+          "reason",
+          "state",
+          "created_at"
+        ]
+      },
+      "ModerationFlags": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationFlag"
+            },
+            "maxItems": 50,
+            "uniqueItems": true
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ModerationDecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "no_action",
+              "flag",
+              "restrict",
+              "remove",
+              "restore"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "policy_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "notify_author": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action",
+          "reason",
+          "policy_version",
+          "notify_author"
+        ]
+      },
+      "CategoryInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "description": "UUIDv7 public identifier; never an authorization secret."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "label_es": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "label_en": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "parent_id",
+          "slug",
+          "label_es",
+          "label_en"
+        ]
+      },
+      "CategoryPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "description": "UUIDv7 public identifier; never an authorization secret."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "label_es": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "label_en": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [],
+        "minProperties": 1
+      },
+      "WebhookEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "event_type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          }
+        },
+        "required": [
+          "event_id",
+          "event_type",
+          "occurred_at"
+        ],
+        "description": "Draft logical event only. Actual provider-specific raw-byte schemas/signature headers must replace this envelope per approved callback before enabling; no generic webhook is accepted."
+      },
+      "AppealInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "policy_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "reason",
+          "policy_version"
+        ]
+      },
+      "ReportStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv7 public identifier; never an authorization secret."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "reviewing",
+              "resolved",
+              "appealed"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC timestamp."
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "created_at",
+          "decision_reason"
+        ]
+      },
+      "AccountDeletionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "confirm"
+        ]
+      },
+      "PresetSearch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "es-CR",
+              "en"
+            ],
+            "default": "es-CR"
+          },
+          "center": {
+            "$ref": "#/components/schemas/Center"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/Filters"
+          },
+          "priority": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "price",
+                "distance",
+                "rating",
+                "type_match",
+                "popularity"
+              ]
+            },
+            "maxItems": 5,
+            "uniqueItems": true,
+            "minItems": 1,
+            "description": "Unique criteria; omitted criteria appended in default order."
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "lexicographic",
+              "weighted"
+            ],
+            "default": "lexicographic"
+          }
+        },
+        "required": [
+          "center"
+        ]
+      },
+      "RankFact": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "criterion": {
+            "type": "string"
+          },
+          "known": {
+            "type": "boolean"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "utility_micros": {
+            "type": "number"
+          },
+          "raw_weight": {
+            "type": "number"
+          },
+          "weighted_numerator": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "criterion",
+          "known",
+          "value",
+          "utility_micros",
+          "raw_weight",
+          "weighted_numerator"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "oidc": {
+        "type": "oauth2",
+        "description": "Separate verified OIDC issuer, code+PKCE, strict JWT validation; replace example.invalid after selection.",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://identity.example.invalid/authorize",
+            "tokenUrl": "https://identity.example.invalid/token",
+            "scopes": {
+              "profile:read": "read profile subject to ownership/role checks",
+              "profile:write": "write profile subject to ownership/role checks",
+              "saved:read": "read saved subject to ownership/role checks",
+              "saved:write": "write saved subject to ownership/role checks",
+              "presets:read": "read presets subject to ownership/role checks",
+              "presets:write": "write presets subject to ownership/role checks",
+              "rights:read": "read rights subject to ownership/role checks",
+              "rights:write": "write rights subject to ownership/role checks",
+              "moderation:read": "read moderation subject to ownership/role checks",
+              "moderation:write": "write moderation subject to ownership/role checks",
+              "reviews:write": "Write reviews subject to ownership/role checks",
+              "media:write": "Write media subject to ownership/role checks",
+              "providers:write": "Write providers subject to ownership/role checks",
+              "catalog:write": "Write catalog subject to ownership/role checks"
+            }
+          }
+        }
+      },
+      "browserSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-aroundate_session",
+        "description": "Opaque BFF session; CSRF and Origin for writes; scopes still enforced."
+      },
+      "providerSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Provider-Signature",
+        "description": "Draft placeholder; actual header and signing contract selected per enabled provider, never trusted generically."
+      }
+    },
+    "responses": {
+      "Problem400": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem401": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "WWW-Authenticate": {
+            "description": "Bearer challenge.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem403": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem404": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem409": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem412": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem413": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem422": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem428": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem429": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "Retry-After": {
+            "description": "Seconds to wait or HTTP-date.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Problem503": {
+        "description": "RFC 9457; correlation ID, no sensitive values or stack traces.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Opaque request correlation UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-status": "Implemented sandbox; Phase 1 and initial Phase 2"
+}

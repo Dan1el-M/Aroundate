@@ -1,0 +1,26 @@
+# Deployment shape only; API intentionally refuses live startup before release gates.
+services:
+  api:
+    image: ${AROUNDATE_API_IMAGE:?Supply signed immutable release digest}
+    user: node
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:size=32m,noexec,nosuid"]
+    environment:
+      NODE_ENV: production
+      APP_MODE: live
+      API_HOST: 0.0.0.0
+    env_file: .env.production
+  web:
+    image: ${AROUNDATE_WEB_IMAGE:?Supply signed immutable release digest}
+    user: node
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:size=32m,noexec,nosuid"]
+    environment:
+      NODE_ENV: production
+      APP_MODE: live
+      API_INTERNAL_ORIGIN: http://api:3001
+    env_file: .env.production

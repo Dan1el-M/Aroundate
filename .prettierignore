@@ -1,0 +1,8 @@
+node_modules
+.next
+.next-production
+dist
+coverage
+tmp
+package-lock.json
+docs/phase-0

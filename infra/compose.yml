@@ -1,0 +1,39 @@
+name: aroundate-local
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?Use --env-file infra/images.env}
+    environment:
+      POSTGRES_DB: aroundate
+      POSTGRES_USER: aroundate_migrator
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Generate local .env first}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Generate local .env first}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-roles.sh:/docker-entrypoint-initdb.d/001-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aroundate_migrator -d aroundate"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: ["no-new-privileges:true"]
+  redis:
+    image: ${REDIS_IMAGE:?Use --env-file infra/images.env}
+    ports: ["127.0.0.1:6379:6379"]
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    read_only: true
+    tmpfs: [/data]
+    security_opt: ["no-new-privileges:true"]
+  identity:
+    image: ${KEYCLOAK_IMAGE:?Use --env-file infra/images.env}
+    profiles: [identity]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?Generate local .env first}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?Generate local .env first}
+      KC_HTTP_ENABLED: "true"
+    command: ["start-dev", "--import-realm"]
+    ports: ["127.0.0.1:8080:8080"]
+    volumes: ["./identity/realm.json:/opt/keycloak/data/import/realm.json:ro"]
+    security_opt: ["no-new-privileges:true"]
+volumes:
+  pgdata:
